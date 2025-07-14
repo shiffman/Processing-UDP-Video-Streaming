@@ -3,16 +3,18 @@
 
 // A Thread using receiving UDP
 
+import java.io.*;
+
 class ReceiverThread extends Thread {
 
   // Port we are receiving.
   int port = 9100; 
-  DatagramSocket ds; 
-  // A byte array to read into (max size of 65536, could be smaller)
-  byte[] buffer = new byte[65536]; 
+  UDP udp;  // define the UDP object
+  // Reference to parent for UDP callback
+  VideoReceiverThread parent;
 
   boolean running;    // Is the thread running?  Yes or no?
-  boolean available;  // Are there new tweets available?
+  boolean available;  // Are there new images available?
 
   // Start with something 
   PImage img;
@@ -21,12 +23,14 @@ class ReceiverThread extends Thread {
     img = createImage(w,h,RGB);
     running = false;
     available = true; // We start with "loading . . " being available
+  }
 
-    try {
-      ds = new DatagramSocket(port);
-    } catch (SocketException e) {
-      e.printStackTrace();
-    }
+  // Set the parent reference for UDP callbacks
+  void setParent(VideoReceiverThread p) {
+    parent = p;
+    // create a new datagram connection on port and wait for incoming message
+    udp = new UDP( parent, port );
+    udp.listen( true );
   }
 
   PImage getImage() {
@@ -48,23 +52,20 @@ class ReceiverThread extends Thread {
   // We must implement run, this gets triggered by start()
   void run () {
     while (running) {
-      checkForImage();
-      // New data is available!
-      available = true;
+      // With UDP library, we don't need to actively poll
+      // The receive handler will be called automatically
+      // Just sleep to keep thread alive
+      try {
+        Thread.sleep(10);
+      } catch (InterruptedException e) {
+        break;
+      }
     }
   }
 
-  void checkForImage() {
-    DatagramPacket p = new DatagramPacket(buffer, buffer.length); 
-    try {
-      ds.receive(p);
-    } 
-    catch (IOException e) {
-      e.printStackTrace();
-    } 
-    byte[] data = p.getData();
-
-    //println("Received datagram with " + data.length + " bytes." );
+  // Process incoming image data (called from UDP receive handler)
+  void processImage(byte[] data, String ip, int port) {
+    println("Received datagram with " + data.length + " bytes from " + ip);
 
     // Read incoming data into a ByteArrayInputStream
     ByteArrayInputStream bais = new ByteArrayInputStream( data );
@@ -82,6 +83,9 @@ class ReceiverThread extends Thread {
     }
     // Update the PImage pixels
     img.updatePixels();
+    
+    // New data is available!
+    available = true;
   }
 
 
