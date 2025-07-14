@@ -18,7 +18,7 @@ Capture cam;
 void setup() {
   size(320,240);
   
-  // create a new datagram connection for sending
+  // Create a new connection for sending data
   udp = new UDP( this );
   
   // Initialize Camera with better error handling
@@ -41,11 +41,6 @@ void setup() {
   cam.start();
 }
 
-void captureEvent( Capture c ) {
-  // This event handler is called whenever a new frame is available
-  // But we're now handling camera reading in draw() instead
-}
-
 void draw() {
   if (cam.available() == true) {
     cam.read();
@@ -58,12 +53,11 @@ void draw() {
 
 // Function to broadcast a PImage over UDP
 // Special thanks to: http://ubaa.net/shared/processing/udp/
-// (This example doesn't use the library, but you can!)
 void broadcast(PImage img, int outputWidth, int outputHeight) {
 
-  // Create a resized copy of the image to match receiver dimensions (320x240)
+  // Create a resized copy of the image to match receiver dimensions
   PImage resized = createImage(outputWidth, outputHeight, RGB);
-  resized.copy(img, 0, 0, img.width, img.height, 0, 0, 320, 240);
+  resized.copy(img, 0, 0, img.width, img.height, 0, 0, outputWidth, outputHeight);
 
   // We need a buffered image to do the JPG encoding
   BufferedImage bimg = new BufferedImage( resized.width, resized.height, BufferedImage.TYPE_INT_RGB );
